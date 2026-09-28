@@ -25,3 +25,15 @@ This document logs all major technical and architectural decisions made througho
 - **Consideration:** Considered using Conda `environment.yml` but decided on a simpler `requirements.txt` paired with a Python setup script to avoid enforcing a specific package manager.
 - **Decision:** Created a `requirements.txt` specifically pinning PyTorch with CUDA 12.1 (`cu121`), and a `setup_env.py` script to generate necessary project directories and verify CUDA availability.
 - **Code Change Summary:** Created `requirements.txt` with PyTorch CUDA wheels and `setup_env.py` for directory scaffolding and environment logging.
+
+---
+
+### [DECISION-003] Clean and Rearrange Codebase
+- **Date:** 2026-09-29
+- **Status:** IMPLEMENTED
+- **Category:** ARCHITECTURE
+- **Files Changed:** `tmp/`, `output/`, `docs/milestone_report/`, `update_plan.py`
+- **Reason:** The repository contained residual folders (`tmp/`, `output/`) from a previously generated PDF milestone report, as well as a temporary `update_plan.py` script. These cluttered the root directory.
+- **Consideration:** Considered deleting the milestone report assets entirely since it is a generated artifact, but keeping them in `docs/milestone_report/` preserves project history.
+- **Decision:** Consolidated all milestone report assets (PDF, images, generation script) into `docs/milestone_report/`. Deleted the `tmp/` and `output/` directories. Removed temporary python scripts.
+- **Code Change Summary:** Moved files and deleted unnecessary root directories.
