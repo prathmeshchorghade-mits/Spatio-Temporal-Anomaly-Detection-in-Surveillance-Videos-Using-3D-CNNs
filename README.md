@@ -1,12 +1,12 @@
 # Spatio-Temporal Video Anomaly Detection
 
-Capstone project for **Madhav Institute of Technology and Science (MITS)**. This project trains a PyTorch 3D CNN **from scratch in Google Colab** to score suspicious behaviour in surveillance video—such as fighting, accidents, theft, robbery, or vandalism. The initial deliverable is a reproducible training, evaluation, and video-inference pipeline; dashboard and edge deployment are future extensions.
+Capstone project for **Madhav Institute of Technology and Science (MITS)**. This project trains a PyTorch 3D CNN **from scratch in local environment** to score suspicious behaviour in surveillance video—such as fighting, accidents, theft, robbery, or vandalism. The initial deliverable is a reproducible training, evaluation, and video-inference pipeline; dashboard and edge deployment are future extensions.
 
 **Research question:** *How far can a compact, from-scratch spatio-temporal model get on weak video-level labels, and what closes the gap to pretrained pipelines?*
 
 ## What the system does
 
-1. Receives a UCF-Crime, validation/test, or user-uploaded video file from Google Drive.
+1. Receives a UCF-Crime, validation/test, or user-uploaded video file from local disk.
 2. Builds overlapping, normalized 16-frame RGB clips.
 3. Scores each clip with a 3D CNN that learns appearance and motion jointly.
 4. Smooths clip scores and applies a configurable persistence threshold to avoid one-frame false alarms.
@@ -23,8 +23,8 @@ flowchart LR
     UCF[UCF-Crime training videos]
   end
 
-  subgraph Colab[Google Colab training environment]
-    DRIVE[Google Drive\ndataset, checkpoints, outputs]
+  subgraph local environment[local environment training environment]
+    DRIVE[local disk\ndataset, checkpoints, outputs]
     INGEST[Pre-transcode, validate,\nsample FPS, resize\nand create clip manifest]
     CLIPS[Overlapping 16-frame clips\nRGB tensor: 3 x 16 x 112 x 112]
     TRAIN[PyTorch 3D CNN +\nMIL ranking head\n3 seeds]
@@ -33,7 +33,7 @@ flowchart LR
     UCF --> DRIVE --> INGEST --> CLIPS --> TRAIN --> EVAL --> OUT
   end
 
-  subgraph Inference[Colab/offline video inference]
+  subgraph Inference[local environment/offline video inference]
     FILE[Validation, test, or user video]
     DECODE[OpenCV/FFmpeg decoder]
     WINDOW[Clip assembler\n16 frames, stride 8]
@@ -45,15 +45,15 @@ flowchart LR
   end
 ```
 
-The component-level design, Colab workflow, data contracts, event-state logic, and evaluation plan are in [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md).
+The component-level design, local environment workflow, data contracts, event-state logic, and evaluation plan are in [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md).
 
 ## Implementation phases
 
-The project is organized into **six implementation phases** that map directly onto five planned Colab notebooks, plus an environment-setup phase. Each phase lists its concrete tasks and the artefact it must produce before the next phase begins.
+The project is organized into **six implementation phases** that map directly onto five planned local environment notebooks, plus an environment-setup phase. Each phase lists its concrete tasks and the artefact it must produce before the next phase begins.
 
 ### Phase 0 — Environment setup (Notebook `01_setup`)
 
-- Mount Google Drive and create the persistent folder structure: `data/`, `checkpoints/`, `runs/`, `outputs/`.
+- Mount local disk and create the persistent folder structure: `data/`, `checkpoints/`, `runs/`, `outputs/`.
 - Verify GPU runtime is active; log GPU name, PyTorch/CUDA versions.
 - Install pinned dependencies (`opencv-python-headless`, `scikit-learn`, `matplotlib`) and freeze versions to `requirements.txt`.
 - Set a global random seed across Python, NumPy, and PyTorch for reproducibility.
@@ -62,7 +62,7 @@ The project is organized into **six implementation phases** that map directly on
 
 ### Phase 1 — Data pipeline (Notebook `02_prepare_data`)
 
-- Pre-transcode videos once to low-res, 10 fps H.264 and copy to Colab's local disk to speed up reading.
+- Pre-transcode videos once to low-res, 10 fps H.264 and copy to local environment's local disk to speed up reading.
 - Scan the UCF-Crime video root and build a manifest: video path, label (normal/anomalous), category, file hash.
 - Run a quality pass — reject corrupted files and videos that decode to fewer than 16 frames; log rejections with reasons.
 - Use the **official UCF-Crime split**. The official test set (290 videos) is strictly preserved for testing. Carve a validation split out of the official train set.
@@ -86,7 +86,7 @@ The project is organized into **six implementation phases** that map directly on
 ### Phase 3 — Training (Notebook `03_train`)
 
 - Build the MIL bag dataset: split each training video into 32 segments and sample one clip per segment (re-jittered every epoch).
-- Configure AdamW optimizer, cosine learning-rate schedule, gradient clipping, and mixed-precision (AMP) training for Colab GPU efficiency.
+- Configure AdamW optimizer, cosine learning-rate schedule, gradient clipping, and mixed-precision (AMP) training for local environment GPU efficiency.
 - Add resume-safe checkpointing: save full state (including optimizer, scheduler, GradScaler, and RNG states) in `last_model.pt` every epoch.
 - Select and save `best_model.pt` based on **validation AUC improvement**, not validation loss (since MIL loss is a weak proxy for detection quality).
 - Log per-epoch train/validation metric components to a CSV for later plotting. **Run training with 3 different seeds to report mean ± std.**
@@ -143,7 +143,7 @@ The project is organized into **six implementation phases** that map directly on
 | Optimizer | AdamW | lr = 1e-4, weight decay = 5e-5 |
 | Schedule | Cosine annealing | Over full epoch budget |
 | Epochs (budget) | up to 60 | Early stopping based on val AUC |
-| Precision | Mixed precision (AMP) | Colab GPU throughput |
+| Precision | Mixed precision (AMP) | local environment GPU throughput |
 | Batch | 4 bag-pairs / step | = 4 × 2 × 32 clips per forward pass |
 | Seeds | 3 | Run with 3 seeds to report mean ± std |
 
@@ -162,7 +162,7 @@ The project is organized into **six implementation phases** that map directly on
 |---|---|---|
 | Data pipeline | Manifests, decode/normalize, data augmentation, fast loading | Phase 1 |
 | 3D CNN training | From-scratch model, MIL loss, validation loop, checkpoints, seeds | Phase 2, 3, 4 |
-| Integration and presentation | Shared Colab modules, plots, annotated video, failure proxies | Phase 5, demo |
+| Integration and presentation | Shared local environment modules, plots, annotated video, failure proxies | Phase 5, demo |
 
 ## Proposed enhancements
 
@@ -213,14 +213,14 @@ After the base model works, use the ensemble's high-confidence agreement to prod
 |---|---|---|
 | Class imbalance / shortcuts | Model learns camera quality instead of events | Shortcut analysis; check correlation with dataset bias |
 | Low light, occlusion, shake | Scores reflect quality, not activity | Automatic failure-condition proxies (brightness, blur, global-motion) |
-| Colab session resets | Loss of training progress | Save full state (optimizer, RNG, scaler) to Drive every epoch |
+| local environment session resets | Loss of training progress | Save full state (optimizer, RNG, scaler) to Drive every epoch |
 | Overfitting from scratch | Poor test generalization | Data augmentation (crop, flip, color jitter, temporal jitter) |
-| Slow I/O from Drive | Training bottleneck | Pre-transcode to low-res H.264 and copy to Colab local disk |
+| Slow I/O from Drive | Training bottleneck | Pre-transcode to low-res H.264 and copy to local environment local disk |
 
-## Google Colab workflow
+## local environment workflow
 
-1. Place the UCF-Crime dataset or approved subset in Google Drive. Do not commit videos or checkpoints to Git.
-2. Open the project notebook in Colab, select a GPU runtime, and mount Drive.
+1. Place the UCF-Crime dataset or approved subset in local disk. Do not commit videos or checkpoints to Git.
+2. Open the project notebook in local environment, select a GPU runtime, and mount Drive.
 3. Run environment setup, manifest creation, preprocessing, and the training cells in order.
 4. Save the best validation checkpoint, configuration JSON, plots, and logs to Drive.
 5. Run evaluation once on the held-out test split, then run `predict_video` to generate an annotated video and score CSV.
@@ -228,7 +228,7 @@ After the base model works, use the ensemble's high-confidence agreement to prod
 Recommended Drive layout:
 
 ```text
-MyDrive/anomaly_detection/
+./
 ├── data/ucf_crime/       # raw videos and manifests
 ├── checkpoints/          # best_model.pt and last_model.pt
 ├── runs/                 # metrics, curves, TensorBoard logs
@@ -240,11 +240,11 @@ MyDrive/anomaly_detection/
 ```text
 .
 ├── data/                 # ignored: raw video, manifests, processed clips
-├── notebooks/            # Colab notebooks: setup, training, evaluation, inference
+├── notebooks/            # local environment notebooks: setup, training, evaluation, inference
 ├── training/             # datasets, 3D CNN, losses, train/evaluate functions
 ├── inference/            # video decoder, clip assembly, overlays, output writer
 ├── tests/                # unit, integration and parity tests
-├── docs/                 # experiments and Colab setup notes
+├── docs/                 # experiments and local environment setup notes
 ├── README.md
 └── SYSTEM_ARCHITECTURE.md
 ```

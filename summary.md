@@ -1,7 +1,7 @@
 # Project Summary — Spatio-Temporal Video Anomaly Detection
 
 > **Project:** Capstone project for Madhav Institute of Technology and Science (MITS)
-> **Objective:** Train a PyTorch 3D CNN from scratch in Google Colab to score suspicious behaviour in surveillance videos using UCF-Crime dataset with MIL (Multiple Instance Learning) ranking loss.
+> **Objective:** Train a PyTorch 3D CNN from scratch in local environment to score suspicious behaviour in surveillance videos using UCF-Crime dataset with MIL (Multiple Instance Learning) ranking loss.
 > **Research Question:** *How far can a compact, from-scratch spatio-temporal model get on weak video-level labels, and what closes the gap to pretrained pipelines?*
 
 ---
@@ -16,11 +16,11 @@
 
 ## What Has Been Implemented
 
-The project follows a **six-phase implementation plan** (Phase 0–5) mapping to five Colab notebooks. The core library (Phase 2 — Model & Loss) and shared infrastructure are complete; the Colab-dependent phases remain.
+The project follows a **six-phase implementation plan** (Phase 0–5) mapping to five local environment notebooks. The core library (Phase 2 — Model & Loss) and shared infrastructure are complete; the local environment-dependent phases remain.
 
 ### ✅ Core Library — Model & Loss (Phase 2)
 
-The 3D CNN architecture, MIL ranking loss, and supporting training infrastructure have been built as importable Python modules (not Colab-only notebook cells), enabling local CPU testing before GPU deployment:
+The 3D CNN architecture, MIL ranking loss, and supporting training infrastructure have been built as importable Python modules (not local environment-only notebook cells), enabling local CPU testing before GPU deployment:
 
 | Component | Status | Description |
 |---|---|---|
@@ -51,8 +51,8 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 
 | File | Description |
 |---|---|
-| [`README.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/README.md) | Main project documentation. Describes the system's purpose, research question, Mermaid architecture diagrams, six-phase implementation plan (Phase 0–5), technical configuration summary tables, team responsibilities, proposed enhancements (ablation ladder, Grad-CAM, cross-dataset eval), differentiation strategy (campus-safety, category head, seed ensemble), risk mitigation plan, Colab workflow, and academic references. |
-| [`SYSTEM_ARCHITECTURE.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/SYSTEM_ARCHITECTURE.md) | Detailed system architecture. Covers scope and quality goals, pre-transcode data pipeline, training architecture flow, data contracts (JSON schema), technical configuration tables (clip/MIL/training/inference settings), 3-seed reporting, offline inference decision logic, output artefact naming, Colab notebook boundaries, experiment artefact design, proposed enhancements (ablation, explainability, evaluation rigor, differentiation), verification gates, and risk mitigations. |
+| [`README.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/README.md) | Main project documentation. Describes the system's purpose, research question, Mermaid architecture diagrams, six-phase implementation plan (Phase 0–5), technical configuration summary tables, team responsibilities, proposed enhancements (ablation ladder, Grad-CAM, cross-dataset eval), differentiation strategy (campus-safety, category head, seed ensemble), risk mitigation plan, local environment workflow, and academic references. |
+| [`SYSTEM_ARCHITECTURE.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/SYSTEM_ARCHITECTURE.md) | Detailed system architecture. Covers scope and quality goals, pre-transcode data pipeline, training architecture flow, data contracts (JSON schema), technical configuration tables (clip/MIL/training/inference settings), 3-seed reporting, offline inference decision logic, output artefact naming, local environment notebook boundaries, experiment artefact design, proposed enhancements (ablation, explainability, evaluation rigor, differentiation), verification gates, and risk mitigations. |
 | [`.gitignore`](file:///Users/prathmesh/Documents/Anomaly%20detection/.gitignore) | Git ignore rules for data files, checkpoints, and outputs. |
 
 ### `training/` — Training Package
@@ -60,10 +60,10 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 | File | Lines | Description |
 |---|---|---|
 | [`__init__.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/__init__.py) | 18 | Package init. Exports `ProjectConfig`, `set_seed`, `get_device`, `save_config`, `load_config`. |
-| [`config.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/config.py) | 238 | **Central configuration module.** Defines the `ProjectConfig` dataclass with all hyperparameters: clip settings (length=16, stride=8, fps=10), spatial dimensions (resize 128×171, crop 112×112), Kinetics-400 normalization stats, MIL settings (32 clips/bag, margin=0.5), training settings (AdamW LR=1e-4, 60 epochs, early stopping patience=12, AMP, 3 seeds), inference thresholds (EMA α=0.3, validation-calibrated enter threshold, exit delta=0.1), and Google Drive paths. Also provides `set_seed()` for reproducibility (Python, NumPy, PyTorch, cuDNN), `get_device()` for hardware selection, and `save_config()`/`load_config()` for JSON serialization. Supports case-insensitive key mapping. |
+| [`config.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/config.py) | 238 | **Central configuration module.** Defines the `ProjectConfig` dataclass with all hyperparameters: clip settings (length=16, stride=8, fps=10), spatial dimensions (resize 128×171, crop 112×112), Kinetics-400 normalization stats, MIL settings (32 clips/bag, margin=0.5), training settings (AdamW LR=1e-4, 60 epochs, early stopping patience=12, AMP, 3 seeds), inference thresholds (EMA α=0.3, validation-calibrated enter threshold, exit delta=0.1), and local disk paths. Also provides `set_seed()` for reproducibility (Python, NumPy, PyTorch, cuDNN), `get_device()` for hardware selection, and `save_config()`/`load_config()` for JSON serialization. Supports case-insensitive key mapping. |
 | [`loss.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/loss.py) | 115 | **MIL Ranking Loss module.** Implements `MILRankingLoss(nn.Module)` with three components: (1) **Ranking loss** — hinge loss on raw logits pushing top anomalous clip above top normal clip by a margin (`max(0, m - topk_anom + topk_norm)`); supports both max-MIL and top-k MIL modes. (2) **Sparsity loss** — encourages anomalies to be rare (penalizes mean sigmoid score). (3) **Smoothness loss** — penalizes rapid score changes between adjacent clips. Returns a dict of `{total, rank, sparse, smooth}` losses. Includes a `_smoke_test()` function that validates gradients flow for both max-MIL and top-k modes. |
 | [`metrics.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/metrics.py) | 172 | **Evaluation metrics module.** Functions: `compute_video_level_auc()` — ROC-AUC on max clip scores per video; `compute_frame_level_auc()` — ROC-AUC and PR-AUC at clip/frame level; `compute_false_alarm_rate()` — counts false alarms per video-hour on normal videos using burst-based detection; `calibrate_threshold()` — finds the optimal threshold achieving a target FPR on the validation set (never on test); `compute_category_breakdown()` — per-category AUC, precision, recall, F1 in a DataFrame; `plot_roc_pr_curves()` — side-by-side ROC and PR curve plots saved to disk. |
-| [`train.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/train.py) | 333 | **Training loop module.** Implements: `get_rng_states()`/`set_rng_states()` for capturing and restoring Python/NumPy/PyTorch RNG states (needed for exact resume after Colab disconnect); `save_checkpoint()`/`load_checkpoint()` for full state persistence (model, optimizer, scheduler, AMP scaler, epoch, val_auc, config, RNG states); `train_one_epoch()` for processing MIL bag-pairs with AMP, gradient clipping, and loss decomposition tracking; `validate()` for scoring all clips per video and computing video-level AUC (used for early stopping, not MIL loss); `train()` main driver with AdamW optimizer, cosine annealing LR scheduler, CSV logging of all metrics per epoch, automatic resume from last checkpoint, and early stopping on validation AUC with configurable patience. |
+| [`train.py`](file:///Users/prathmesh/Documents/Anomaly%20detection/training/train.py) | 333 | **Training loop module.** Implements: `get_rng_states()`/`set_rng_states()` for capturing and restoring Python/NumPy/PyTorch RNG states (needed for exact resume after local environment disconnect); `save_checkpoint()`/`load_checkpoint()` for full state persistence (model, optimizer, scheduler, AMP scaler, epoch, val_auc, config, RNG states); `train_one_epoch()` for processing MIL bag-pairs with AMP, gradient clipping, and loss decomposition tracking; `validate()` for scoring all clips per video and computing video-level AUC (used for early stopping, not MIL loss); `train()` main driver with AdamW optimizer, cosine annealing LR scheduler, CSV logging of all metrics per epoch, automatic resume from last checkpoint, and early stopping on validation AUC with configurable patience. |
 
 ### `training/dataset/` — Dataset & Transforms
 
@@ -91,7 +91,7 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 
 | File | Lines | Description |
 |---|---|---|
-| [`implementation.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/docs/implementation.md) | 237 | Phased implementation guide (Phase 0–7) covering decisions lock, local scaffold + testing, Colab setup, data pipeline, training, evaluation, video inference, and integration/presentation. Includes team responsibility matrix, estimated weekly timeline, and Mermaid dependency flowchart. |
+| [`implementation.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/docs/implementation.md) | 237 | Phased implementation guide (Phase 0–7) covering decisions lock, local scaffold + testing, local environment setup, data pipeline, training, evaluation, video inference, and integration/presentation. Includes team responsibility matrix, estimated weekly timeline, and Mermaid dependency flowchart. |
 
 ### `output/` — Generated Outputs
 
@@ -105,15 +105,15 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 
 ### 🔲 Phase 0 — Environment Setup (Notebook `01_setup.ipynb`)
 
-- [ ] Create Colab notebook that selects GPU runtime
-- [ ] Mount Google Drive and create persistent folder structure (`data/`, `checkpoints/`, `runs/`, `outputs/`)
+- [ ] Create local environment notebook that selects GPU runtime
+- [ ] Mount local disk and create persistent folder structure (`data/`, `checkpoints/`, `runs/`, `outputs/`)
 - [ ] Install and verify pinned packages (`opencv-python-headless`, `scikit-learn`, `matplotlib`)
 - [ ] Freeze package versions to `requirements.txt`
 - [ ] Set global random seed; log `environment.json` to Drive with package versions, GPU info, and seed
 
 ### 🔲 Phase 1 — Data Pipeline (Notebook `02_prepare_data.ipynb`)
 
-- [ ] Pre-transcode videos to low-res, 10 fps H.264; copy to Colab local disk for fast I/O
+- [ ] Pre-transcode videos to low-res, 10 fps H.264; copy to local environment local disk for fast I/O
 - [ ] Scan UCF-Crime root and build manifest with video path, label, category, **file hash**
 - [ ] Run quality pass — reject corrupted files and videos decoding to < 16 frames; log rejections with reasons
 - [ ] Use **official UCF-Crime split** (290 test videos preserved); carve validation from official train set
@@ -122,10 +122,10 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 
 ### 🔲 Phase 3 — Training (Notebook `03_train.ipynb`)
 
-- [ ] Create Colab notebook that imports the local training modules
+- [ ] Create local environment notebook that imports the local training modules
 - [ ] Wire up the full training pipeline (data → model → loss → optimizer → checkpoints)
 - [ ] Train on the UCF-Crime dataset (or an approved subset for debugging first)
-- [ ] Log and save periodic/best checkpoints to Google Drive
+- [ ] Log and save periodic/best checkpoints to local disk
 - [ ] **Run with 3 different seeds** to report mean ± std
 - [ ] **Deliverable:** `best_model.pt`, `last_model.pt`, training log CSV, `run_config.json`
 
@@ -192,7 +192,7 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 ### 🔲 Miscellaneous
 
 - [ ] Add a `requirements.txt` with pinned package versions (generated in Phase 0)
-- [ ] Create a `notebooks/` directory with organized Colab notebooks
+- [ ] Create a `notebooks/` directory with organized local environment notebooks
 - [ ] Add `training/evaluate.py` as a standalone evaluation module (currently evaluation is embedded in `train.py` and `metrics.py`)
 - [ ] Populate `inference/__init__.py` with proper exports
 - [ ] Populate `training/dataset/__init__.py` with proper exports
@@ -208,9 +208,9 @@ The 3D CNN architecture, MIL ranking loss, and supporting training infrastructur
 | **Total Python source files** | 10 |
 | **Total lines of code** | ~1,795 |
 | **Documentation files** | 4 (README, SYSTEM_ARCHITECTURE, implementation guide, summary) |
-| **Implementation phases** | 6 (Phase 0–5) mapping to 5 Colab notebooks |
+| **Implementation phases** | 6 (Phase 0–5) mapping to 5 local environment notebooks |
 | **Phases completed** | Phase 2 (model & loss, core library — all importable modules) |
 | **Phases remaining** | Phase 0 (env setup), Phase 1 (data pipeline), Phase 3 (training), Phase 4 (evaluation), Phase 5 (inference) |
 | **Proposed enhancements** | Ablation ladder, Grad-CAM, shortcut analysis, cross-dataset eval, campus-safety use case, category head, seed ensemble |
 | **Seeds for reporting** | 3 (mean ± std) |
-| **Current focus** | Core library complete; ready for Colab integration |
+| **Current focus** | Core library complete; ready for local environment integration |

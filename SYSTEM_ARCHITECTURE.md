@@ -2,7 +2,7 @@
 
 ## 1. Scope and quality goals
 
-The system is implemented and trained in **Google Colab**. It converts an input video into a timestamped anomaly-score timeline and annotated output video. The model is a PyTorch 3D CNN trained **from randomly initialized weights**; no pretrained backbone, C3D checkpoint, or externally extracted feature vectors are used. It detects **anomalous activity**, not a conclusive crime classification or replacement for human review.
+The system is implemented and trained in **local environment**. It converts an input video into a timestamped anomaly-score timeline and annotated output video. The model is a PyTorch 3D CNN trained **from randomly initialized weights**; no pretrained backbone, C3D checkpoint, or externally extracted feature vectors are used. It detects **anomalous activity**, not a conclusive crime classification or replacement for human review.
 
 **Core research question:** *How far can a compact, from-scratch spatio-temporal model get on weak video-level labels, and what closes the gap to pretrained pipelines?*
 
@@ -10,7 +10,7 @@ The system is implemented and trained in **Google Colab**. It converts an input 
 | --- | --- |
 | Understand motion as well as appearance | 3D CNN operates on 16-frame volumes rather than independent 2D frames. |
 | Learn from untrimmed UCF-Crime videos | Video bags, weak video-level labels, MIL ranking loss. |
-| Fit the capstone environment | Google Colab GPU runtime with data, checkpoints, and outputs stored in Google Drive. |
+| Fit the capstone environment | local environment GPU runtime with data, checkpoints, and outputs stored in local disk. |
 | Reproduce results | Pinned requirements, seeded runs (3 seeds, mean ± std), saved configuration, manifest, checkpoint, and metrics. |
 | Reduce noisy clip predictions | EMA smoothing and a validation-calibrated persistence threshold. |
 | Preserve review evidence | Timestamped score CSV, score plot, and annotated MP4 per evaluated video. |
@@ -21,8 +21,8 @@ The system is implemented and trained in **Google Colab**. It converts an input 
 
 ```mermaid
 flowchart TD
-  A[UCF-Crime video + video-level label\nin Google Drive] --> B[Pre-transcode to low-res\n10fps H.264]
-  B --> C[Colab: manifest builder\npath, label, category, hash]
+  A[UCF-Crime video + video-level label\nin local disk] --> B[Pre-transcode to low-res\n10fps H.264]
+  B --> C[local environment: manifest builder\npath, label, category, hash]
   C --> D[Quality pass: reject corrupted\nand short videos]
   D --> E[Fixed-FPS sampler and\nresize/crop/normalize]
   E --> F[16-frame clips, stride 8\nwith timestamps]
@@ -52,7 +52,7 @@ Each manifest row and each emitted prediction is traceable to a source video and
   "anomaly_score": 0.84,
   "smoothed_score": 0.79,
   "model_version": "scratch-3dcnn-mil-2026.08.1",
-  "checkpoint_path": "MyDrive/anomaly_detection/checkpoints/best_model.pt"
+  "checkpoint_path": "./checkpoints/best_model.pt"
 }
 ```
 
@@ -72,7 +72,7 @@ The ranking loss is computed on **raw logits** (not sigmoid probabilities) to pr
 
 ### Data pipeline details
 
-- **Pre-transcoding:** videos are transcoded once to low-res, 10 fps H.264 and copied to Colab's local disk to avoid Drive I/O bottlenecks during training.
+- **Pre-transcoding:** videos are transcoded once to low-res, 10 fps H.264 and copied to local environment's local disk to avoid Drive I/O bottlenecks during training.
 - **Manifest schema:** video path, label (0=normal, 1=anomalous), category, file hash, split.
 - **Quality gate:** reject corrupted files and videos decoding to fewer than 16 frames; log rejections with reasons.
 - **Official UCF-Crime split:** the official test set (290 videos) is strictly preserved for testing to ensure frame-level AUC is defined and comparable. Validation is carved from the official train set.
@@ -107,7 +107,7 @@ The ranking loss is computed on **raw logits** (not sigmoid probabilities) to pr
 | Optimizer | AdamW | lr = 1e-4, weight decay = 5e-5 |
 | Schedule | Cosine annealing | Over full epoch budget |
 | Epochs (budget) | up to 60 | Early stopping based on val AUC |
-| Precision | Mixed precision (AMP) | Colab GPU throughput |
+| Precision | Mixed precision (AMP) | local environment GPU throughput |
 | Batch | 4 bag-pairs / step | = 4 × 2 × 32 clips per forward pass |
 | Seeds | 3 | Run with 3 seeds to report mean ± std |
 
@@ -154,11 +154,11 @@ Starting configuration: EMA `α=0.3`, threshold calibrated on validation, `N=3`,
 - `{name}_score_plot.png` — readable score-timeline plot with flagged intervals shaded
 - `{name}_annotated.mp4` — annotated video with on-frame score overlay and colored border during flagged intervals
 
-## 5. Colab notebook boundaries
+## 5. local environment notebook boundaries
 
 | Component | Responsibilities | Interfaces |
 | --- | --- | --- |
-| `01_setup.ipynb` | Mount Drive, install versions, choose GPU, set seeds and paths | Colab runtime → `environment.json` |
+| `01_setup.ipynb` | Mount Drive, install versions, choose GPU, set seeds and paths | local environment runtime → `environment.json` |
 | `02_prepare_data.ipynb` | Pre-transcode, build manifests, validate files, decode/preprocess clips | UCF-Crime videos → `manifest_{train,val,test}.csv` |
 | `03_train.ipynb` | Define custom 3D CNN, MIL loss, optimizer, training loop, checkpoints (3 seeds) | training bags → `.pt` checkpoint/logs |
 | `04_evaluate.ipynb` | Load best checkpoint and calculate final metrics/curves, calibrate threshold | test videos → `metrics.json`, `calibrated_threshold.json` |
@@ -184,7 +184,7 @@ Store the manifest, configuration, checkpoint hash, and selected threshold along
 
 | Step | Required input | Output |
 | --- | --- | --- |
-| Setup | Colab GPU runtime and Drive access | `environment.json`, installed dependencies and project paths |
+| Setup | local environment GPU runtime and Drive access | `environment.json`, installed dependencies and project paths |
 | Prepare | source dataset folder and labels | deterministic `manifest_{train,val,test}.csv`, data-quality report |
 | Train | manifest + configuration | periodic and best validation checkpoints (per seed) |
 | Evaluate | frozen best checkpoint + test manifest | `metrics.json`, ROC/PR curves, `calibrated_threshold.json`, category/failure breakdown |
@@ -223,26 +223,26 @@ Report AUC ± std over 3 seeds as features are progressively added:
 - **Seed ensemble uncertainty:** leverage 3 seeds as a deep ensemble for uncertainty estimates and risk-coverage curves.
 - **Self-training (optional):** use ensemble high-confidence agreement to produce pseudo segment-level labels for fine-tuning.
 
-## 9. Google Colab execution topology
+## 9. local environment execution topology
 
-For the capstone, execute the project in a Google Colab GPU session:
+For the capstone, execute the project in a local environment GPU session:
 
 ```text
-Google Colab runtime
+local environment runtime
 ├── Python + PyTorch + OpenCV/FFmpeg
-├── GPU selected by Colab availability
+├── GPU selected by local environment availability
 ├── notebooks or shared source modules
 ├── pre-transcoded video cache (local disk)
 └── temporary runtime files
 
-Google Drive
+local disk
 ├── UCF-Crime dataset and manifests
 ├── checkpoints and configurations
 ├── training logs and plots
 └── annotated inference outputs
 ```
 
-Colab runtimes are ephemeral. Persist all essential artefacts to Drive, expect a session disconnect, and make each notebook resumable from its saved checkpoint. A production web/edge deployment may later export the validated model to ONNX/TensorRT, but that is outside this from-scratch Colab implementation.
+local environment runtimes are ephemeral. Persist all essential artefacts to Drive, expect a session disconnect, and make each notebook resumable from its saved checkpoint. A production web/edge deployment may later export the validated model to ONNX/TensorRT, but that is outside this from-scratch local environment implementation.
 
 ## 10. Verification gates
 
@@ -251,7 +251,7 @@ Colab runtimes are ephemeral. Persist all essential artefacts to Drive, expect a
 3. **Reproducibility gate:** rerun evaluation from the saved best checkpoint and confirm matching metrics within an agreed tolerance.
 4. **Inference gate:** verify preprocessing shape/dtype/order and check that the saved checkpoint produces timestamp-aligned score CSV and playable annotated MP4.
 5. **Detection gate:** report false alarms per video or hour and time-to-detect alongside AUC; evaluate darkness, occlusion, crowding, and unseen normal activities using automatic failure-condition proxies.
-6. **Colab gate:** all important data, models, metrics, and plots persist in Drive; the notebook can resume after a runtime reset.
+6. **local environment gate:** all important data, models, metrics, and plots persist in Drive; the notebook can resume after a runtime reset.
 
 ## 11. Risks and mitigations
 
@@ -260,12 +260,12 @@ Colab runtimes are ephemeral. Persist all essential artefacts to Drive, expect a
 | Class imbalance / shortcuts | Model learns camera quality instead of events | Shortcut analysis; check correlation with dataset bias. |
 | Low light, occlusion, shake | Scores reflect quality, not activity | Automatic failure-condition proxies (brightness, blur, global-motion). |
 | False positives from shadows, crowds, or camera shake | Noisy alerts | Per-camera validation, smoothing/hysteresis, background quality checks, human acknowledgement. |
-| Colab runtime disconnects | Loss of training progress | Save full state (optimizer, RNG, scaler) to Drive every epoch. |
-| Limited Colab GPU/session time | Slow progress | Use a small approved subset during debugging, mixed precision, resume-capable training. |
-| Slow I/O from Drive | Training bottleneck | Pre-transcode to low-res H.264 and copy to Colab local disk. |
+| local environment runtime disconnects | Loss of training progress | Save full state (optimizer, RNG, scaler) to Drive every epoch. |
+| Limited local environment GPU/session time | Slow progress | Use a small approved subset during debugging, mixed precision, resume-capable training. |
+| Slow I/O from Drive | Training bottleneck | Pre-transcode to low-res H.264 and copy to local environment local disk. |
 | Overfitting from scratch | Poor test generalization | Data augmentation (crop, flip, color jitter, temporal jitter). |
 | Inconsistent notebook transforms | Train/test skew | Import shared preprocessing code and record every transform in `run_config.json`. |
 
 ## 12. Research traceability
 
-The architecture specifically draws from the supplied notes: C3D's 3D spatio-temporal convolutions, 3×3×3 kernels, and 16-frame overlapping clips; UCF-Crime's long untrimmed surveillance data and weak MIL ranking strategy with smoothness/sparsity; and the anomaly-detection review's cautions around rarity, heterogeneity, false positives, novel anomalies, and explanation. These materials inform the from-scratch Colab design—they do not impose implementation instructions.
+The architecture specifically draws from the supplied notes: C3D's 3D spatio-temporal convolutions, 3×3×3 kernels, and 16-frame overlapping clips; UCF-Crime's long untrimmed surveillance data and weak MIL ranking strategy with smoothness/sparsity; and the anomaly-detection review's cautions around rarity, heterogeneity, false positives, novel anomalies, and explanation. These materials inform the from-scratch local environment design—they do not impose implementation instructions.
