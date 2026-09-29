@@ -14,7 +14,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast, GradScaler
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
@@ -56,7 +55,7 @@ def save_checkpoint(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler,
-    scaler: Optional[GradScaler],
+    scaler: Optional[Any],
     epoch: int,
     val_auc: float,
     config: Dict[str, Any],
@@ -83,7 +82,7 @@ def load_checkpoint(
     model: nn.Module,
     optimizer: Optional[torch.optim.Optimizer] = None,
     scheduler=None,
-    scaler: Optional[GradScaler] = None,
+    scaler: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Load checkpoint and restore all states.  Returns the checkpoint dict."""
     checkpoint = torch.load(path, map_location="cpu")
@@ -108,7 +107,7 @@ def train_one_epoch(
     dataloader: DataLoader,
     criterion: nn.Module,
     optimizer: torch.optim.Optimizer,
-    scaler: Optional[GradScaler],
+    scaler: Optional[Any],
     device: torch.device,
     grad_clip: float = 1.0,
 ) -> Dict[str, float]:
@@ -134,7 +133,8 @@ def train_one_epoch(
         optimizer.zero_grad(set_to_none=True)
 
         use_amp = scaler is not None
-        with autocast(enabled=use_amp):
+        device_type = 'cuda' if device.type == 'cuda' else 'cpu' if device.type == 'cpu' else 'mps'
+        with torch.autocast(device_type=device_type, enabled=use_amp):
             anom_logits = model(anom_flat).view(B, K)   # (B, K)
             norm_logits = model(norm_flat).view(B, K)   # (B, K)
 
@@ -187,7 +187,8 @@ def validate(
             scores = []
             for j in range(0, clips.size(0), batch_size):
                 batch = clips[j : j + batch_size]
-                with autocast():
+                device_type = 'cuda' if device.type == 'cuda' else 'cpu' if device.type == 'cpu' else 'mps'
+                with torch.autocast(device_type=device_type):
                     logits = model(batch)
                 batch_scores = torch.sigmoid(logits).squeeze(-1)
                 scores.append(batch_scores.cpu())
@@ -233,7 +234,8 @@ def train(
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=config.EPOCHS
     )
-    scaler = GradScaler(enabled=config.AMP) if config.AMP else None
+    use_amp = config.AMP and device.type == "cuda"
+    scaler = torch.cuda.amp.GradScaler(enabled=use_amp) if use_amp else None
 
     # Paths
     seed = config.SEED

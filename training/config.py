@@ -114,11 +114,11 @@ class ProjectConfig:
     EXIT_DELTA: float = 0.1
     RUN_LENGTH: int = 3
 
-    # Paths (Google Drive defaults)
-    DATA_ROOT: str = "/content/drive/MyDrive/anomaly_detection/data/ucf_crime"
-    CHECKPOINT_DIR: str = "/content/drive/MyDrive/anomaly_detection/checkpoints"
-    RUNS_DIR: str = "/content/drive/MyDrive/anomaly_detection/runs"
-    OUTPUT_DIR: str = "/content/drive/MyDrive/anomaly_detection/outputs"
+    # Paths (Local defaults)
+    DATA_ROOT: str = "./data"
+    CHECKPOINT_DIR: str = "./checkpoints"
+    RUNS_DIR: str = "./runs"
+    OUTPUT_DIR: str = "./outputs"
 
     # Seed
     SEED: int = 42
@@ -186,9 +186,14 @@ def get_device() -> torch.device:
     """Return the primary computing device available.
 
     Returns:
-        torch.device: 'cuda' device if CUDA is available, otherwise 'cpu'.
+        torch.device: 'cuda' device if CUDA is available, 'mps' if Apple Silicon is available, otherwise 'cpu'.
     """
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
 
 
 def save_config(config: ProjectConfig, path: Union[str, Path]) -> None:
