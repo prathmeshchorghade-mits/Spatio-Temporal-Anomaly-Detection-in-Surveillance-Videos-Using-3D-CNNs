@@ -1,12 +1,16 @@
 import os
 import json
 import torch
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
 def setup_environment():
     dirs = ['data', 'checkpoints', 'runs', 'outputs']
     for d in dirs:
-        os.makedirs(d, exist_ok=True)
-        print(f"Ensured directory exists: {d}/")
+        target_dir = ROOT_DIR / d
+        os.makedirs(target_dir, exist_ok=True)
+        print(f"Ensured directory exists: {target_dir}/")
 
     cuda_available = torch.cuda.is_available()
     device_name = torch.cuda.get_device_name(0) if cuda_available else "No NVIDIA GPU found"

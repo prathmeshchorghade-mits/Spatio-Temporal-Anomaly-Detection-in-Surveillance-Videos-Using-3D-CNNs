@@ -2,7 +2,7 @@
 
 **Working Title:** Dense Weakly Supervised Anomaly Localization with a Compact From-Scratch 3D CNN: A Localization-Aware Shortcut Audit and Ensemble Uncertainty  
 **Date:** 15 October 2026  
-**Companion Documents:** [`implementation_plan.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/implementation_plan.md) | [`summary.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/summary.md) | [`SYSTEM_ARCHITECTURE.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/SYSTEM_ARCHITECTURE.md)  
+**Companion Documents:** [`implementation_plan.md`](../planning/implementation_plan.md) | [`summary.md`](../planning/summary.md) | [`paper_ready.md`](paper_ready.md) | [`SYSTEM_ARCHITECTURE.md`](../architecture/SYSTEM_ARCHITECTURE.md)  
 **Authors / Affiliation:** Video Anomaly Detection Research Group (MITS Capstone & Academic Paper Track)
 
 ---

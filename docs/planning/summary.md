@@ -2,7 +2,7 @@
 
 > **Working Title:** Dense Weakly Supervised Anomaly Localization with a Compact From-Scratch 3D CNN: A Localization-Aware Shortcut Audit and Ensemble Uncertainty  
 > **Base Repo:** Spatio-Temporal Video Anomaly Detection (MITS Capstone & Research Track)  
-> **Date:** 14 Oct 2026 | **Companion File:** [`implementation_plan.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/implementation_plan.md)  
+> **Date:** 14 Oct 2026 | **Companion File:** [`implementation_plan.md`](implementation_plan.md)  
 > **Research Question:** *How far can dense spatio-temporal anomaly localization emerge from weak video-level labels in a compact 3D CNN trained from scratch, how much does the model rely on non-event shortcuts, and can ensemble uncertainty enable risk-controlled triage?*
 
 ---

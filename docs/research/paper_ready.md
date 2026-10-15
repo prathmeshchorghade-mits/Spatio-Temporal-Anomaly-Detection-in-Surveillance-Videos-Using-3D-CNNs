@@ -4,7 +4,7 @@
 **Target Venues:** CVPR / WACV / ECCV / ICIP Workshops (Vision for Surveillance / Robust VAD Tracks), ACM Multimedia, IEEE Access, Pattern Recognition Letters  
 **Format:** Standard 8-page double-column conference paper + Supplementary Material  
 **Date:** 15 October 2026  
-**Companion Documents:** [`research.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/research.md) | [`implementation_plan.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/implementation_plan.md) | [`summary.md`](file:///Users/prathmesh/Documents/Anomaly%20detection/summary.md)
+**Companion Documents:** [`research.md`](research.md) | [`implementation_plan.md`](../planning/implementation_plan.md) | [`summary.md`](../planning/summary.md) | [`SYSTEM_ARCHITECTURE.md`](../architecture/SYSTEM_ARCHITECTURE.md)
 
 ---
 

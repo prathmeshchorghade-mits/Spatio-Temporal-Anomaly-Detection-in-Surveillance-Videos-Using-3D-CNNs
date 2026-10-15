@@ -8,11 +8,61 @@ Capstone project for **Madhav Institute of Technology and Science (MITS)** & Aca
 
 ### 📚 Research Track & Master Documentation
 
-- 🔬 [**`research.md`**](research.md) — Comprehensive research compendium: prior literature gaps, our novelty, voxel MIL mathematical formulations, findings, and solution architecture.
-- 📋 [**`paper_ready.md`**](paper_ready.md) — Master publication readiness checklist, 5 mandatory result tables, SAM 2 mini-mask benchmark protocol, and reviewer-proofing guardrails.
-- 🛠️ [**`implementation_plan.md`**](implementation_plan.md) — Complete 10-phase master implementation plan, code templates, ablation ladder, and experiment matrix (E0–E10).
-- 📊 [**`summary.md`**](summary.md) — Consolidated codebase status, completed modules, and roadmap.
-- 🏛️ [**`SYSTEM_ARCHITECTURE.md`**](SYSTEM_ARCHITECTURE.md) — Engineering architecture, data contracts, and pipeline specs.
+- 🔬 [**`docs/research/research.md`**](docs/research/research.md) — Comprehensive research compendium: prior literature gaps, our novelty, voxel MIL mathematical formulations, findings, and solution architecture.
+- 📋 [**`docs/research/paper_ready.md`**](docs/research/paper_ready.md) — Master publication readiness checklist, 5 mandatory result tables, SAM 2 mini-mask benchmark protocol, and reviewer-proofing guardrails.
+- 🛠️ [**`docs/planning/implementation_plan.md`**](docs/planning/implementation_plan.md) — Complete 10-phase master implementation plan, code templates, ablation ladder, and experiment matrix (E0–E10).
+- 📊 [**`docs/planning/summary.md`**](docs/planning/summary.md) — Consolidated codebase status, completed modules, and roadmap.
+- 🏛️ [**`docs/architecture/SYSTEM_ARCHITECTURE.md`**](docs/architecture/SYSTEM_ARCHITECTURE.md) — Engineering architecture, data contracts, and pipeline specs.
+- 📖 [**`docs/guides/TRAINING_GUIDE.md`**](docs/guides/TRAINING_GUIDE.md) — Step-by-step local & cloud training guide.
+
+---
+
+### 📂 Repository Structure
+
+```text
+.
+├── README.md               # Main repo overview & documentation index
+├── requirements.txt        # Pinned dependencies
+├── .gitignore              # Git ignore rules
+│
+├── docs/                   # Organized documentation & research
+│   ├── research/           # Scientific papers & submission specs
+│   │   ├── research.md     # Research positioning, math formulation & findings
+│   │   └── paper_ready.md  # 5 publication tables & submission checklist
+│   ├── planning/           # Implementation plans & project roadmaps
+│   │   ├── implementation_plan.md # 10-phase plan & experiment matrix (E0-E10)
+│   │   ├── summary.md      # Consolidated codebase status & component inventory
+│   │   ├── implementation.md # Capstone implementation guide
+│   │   └── decision.md     # Architecture decisions lock record
+│   ├── architecture/       # Technical architecture & data contracts
+│   │   └── SYSTEM_ARCHITECTURE.md
+│   ├── guides/             # Walkthrough & operational guides
+│   │   └── TRAINING_GUIDE.md
+│   └── milestones/         # Historical milestone reports & report assets
+│       ├── milestone.md
+│       ├── milestone_4.md
+│       ├── summary_4.md
+│       └── report_assets/
+│
+├── scripts/                # Execution & CLI scripts
+│   ├── prepare_data.py     # 10 FPS video transcoding & manifest generator
+│   ├── train_runner.py     # Multi-seed training runner
+│   └── setup_env.py        # Environment validation & directory init
+│
+├── training/               # Pure PyTorch model, loss, and training library
+│   ├── config.py           # Central configuration dataclass & seed control
+│   ├── loss.py             # MIL ranking loss module
+│   ├── metrics.py          # Frame/video AUC & calibration metrics
+│   ├── train.py            # AMP training loop, resume-safe checkpoints
+│   ├── dataset/            # Manifest parser, transforms, MIL bag sampling
+│   └── model/              # Scratch3DCNN & DenseC3D neural networks
+│
+├── inference/              # Video inference & postprocessing pipeline
+│   └── postprocess.py      # EMA smoothing & hysteresis thresholding
+│
+├── notebooks/              # Jupyter/Colab notebooks (01-05)
+└── tests/                  # Unit and integration smoke tests
+```
 
 ---
 
@@ -57,7 +107,7 @@ flowchart LR
   end
 ```
 
-The component-level design, local environment workflow, data contracts, event-state logic, and evaluation plan are in [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md).
+The component-level design, local environment workflow, data contracts, event-state logic, and evaluation plan are in [docs/architecture/SYSTEM_ARCHITECTURE.md](docs/architecture/SYSTEM_ARCHITECTURE.md).
 
 ## Implementation phases
 

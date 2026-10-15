@@ -1,5 +1,11 @@
 import os
 import sys
+from pathlib import Path
+
+# Add project root to sys.path so 'training' package is always importable
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from training.config import ProjectConfig, set_seed, get_device, save_config
 from training.model.scratch_3dcnn import Scratch3DCNN, count_parameters
