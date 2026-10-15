@@ -1,54 +1,39 @@
-# Implementation Plan (Local Execution Scripts)
+# Implementation Plan
 
-With the core library components (`training/model`, `training/loss.py`, `training/metrics.py`, etc.) completed, the project requires four top-level execution scripts to wire these modules together. 
-
-These scripts will be run on the target machine where the dataset is physically stored on the hard drive.
-
----
-
-## 1. `prepare_data.py` (Data Pipeline)
-**Objective:** Process the raw UCF-Crime dataset located on the local hard drive into a format ready for training.
-
-**Tasks:**
-- Accept the raw dataset directory path via command-line arguments.
-- Iterate through all `.mp4` video files.
-- Transcode the videos to **10 FPS** at a lower resolution (e.g., 128x171) using OpenCV or FFmpeg to accelerate training I/O.
-- Validate that each processed video contains a minimum of 16 frames. Drop corrupted or short videos.
-- Generate three dataset manifest CSV files (`manifest_train.csv`, `manifest_val.csv`, `manifest_test.csv`). These files must contain the file paths, labels (normal/anomaly), and categories.
+> **Note:** The comprehensive 10-phase implementation plan, technical specifications, experiment matrix, and 16-week timeline have been expanded into the root master file:  
+> 📄 [**`implementation_plan.md`**](file:///Users/prathmesh/Documents/Anomaly%20detection/implementation_plan.md)  
+> 
+> Please refer to [**`summary.md`**](file:///Users/prathmesh/Documents/Anomaly%20detection/summary.md) for the consolidated codebase inventory and implementation roadmap.
 
 ---
 
-## 2. `run_training.py` (Main Training Script)
-**Objective:** The entry-point script to initiate the model training process.
+## Quick Reference: Top-Level Execution Scripts (Phases 1, 3, 4, 5)
 
-**Tasks:**
-- Parse command-line arguments (e.g., batch size, epochs, paths to manifests).
-- Load the configuration parameters using `ProjectConfig`.
-- Instantiate the dataset classes (`MILBagDataset` for training and validation) using the CSV manifests generated in Step 1.
-- Instantiate the custom 3D CNN model (`Scratch3DCNN`), the MIL ranking loss function, and the optimizer.
-- Invoke the existing main training loop from `training/train.py`.
-- Ensure the training loop saves `best_model.pt` and `last_model.pt` correctly to the `./checkpoints/` directory.
+The pipeline uses the following top-level CLI scripts to execute tasks on the target machine:
 
----
+### 1. `prepare_data.py` (Data Pipeline — Phase 1)
+- Ingest raw UCF-Crime dataset.
+- Transcode videos to 10 FPS at low resolution (128×171) via OpenCV / FFmpeg.
+- Validate frame count (minimum 16 frames); drop corrupted files.
+- Generate manifests: `manifest_train.csv`, `manifest_val.csv`, `manifest_test.csv` following official splits.
 
-## 3. `run_evaluation.py` (Evaluation Script)
-**Objective:** Test the model's performance after training and generate standardized metrics.
+### 2. `train_runner.py` / `run_training.py` (Training Engine — Phases 3 & 4)
+- Load config parameters from `ProjectConfig`.
+- Instantiate datasets (`MILBagDataset` / `MILBagValidationDataset`).
+- Instantiate model (`DenseC3D` for dense voxel localization or `Scratch3DCNN` for clip baseline).
+- Train with AdamW, AMP, cosine annealing, and resume-safe checkpointing.
+- Save `best_model.pt` (selected strictly on validation AUC) and `last_model.pt`.
 
-**Tasks:**
-- Load the frozen `best_model.pt` checkpoint.
-- Run inference over the **validation set** to calibrate and lock in the optimal anomaly threshold.
-- Run inference over the **test set** using the calibrated threshold.
-- Utilize the functions in `training/metrics.py` to output the final frame-level ROC-AUC, PR-AUC, and false alarm rates.
-- Generate failure analysis logs (e.g., flagging low light or motion blur).
+### 3. `run_evaluation.py` (Evaluation & Metrics — Phases 4, 7, 8)
+- Load frozen `best_model.pt`.
+- Calibrate threshold on validation split; freeze into `calibrated_threshold.json`.
+- Compute test frame-level ROC-AUC, PR-AUC, and false alarms per hour.
+- Compute spatial localization metrics (pointing game, energy-in-region, pixel AUC, IoU).
+- Run shortcut audit and anomalous-only AUC.
 
----
-
-## 4. `predict_video.py` (Inference & Demo Script)
-**Objective:** Demonstrate the model's capabilities on a single, unseen surveillance video.
-
-**Tasks:**
-- Accept a path to a single `.mp4` video as input.
-- Extract 16-frame overlapping clips and run them through the trained model to get raw anomaly scores.
-- Apply temporal smoothing to the scores using the utilities in `inference/postprocess.py`.
-- Use OpenCV to draw a score overlay/graph and colored bounding box alerts directly onto the video frames.
-- Save the annotated `.mp4` output file to the `./outputs/` directory for human review.
+### 4. `predict_video.py` (Inference & Heatmap Demo — Phases 5 & 6)
+- Ingest single `.mp4` video.
+- Extract 16-frame sliding clips (stride 8) $\to$ predict voxel logits.
+- Run `inference/heatmaps.py` to upsample and average overlapping clips.
+- Apply per-pixel EMA temporal smoothing.
+- Render annotated video with heatmap overlay, score plot, and anomaly intervals.

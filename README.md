@@ -1,8 +1,20 @@
 # Spatio-Temporal Video Anomaly Detection
 
-Capstone project for **Madhav Institute of Technology and Science (MITS)**. This project trains a PyTorch 3D CNN **from scratch in local environment** to score suspicious behaviour in surveillance video—such as fighting, accidents, theft, robbery, or vandalism. The initial deliverable is a reproducible training, evaluation, and video-inference pipeline; dashboard and edge deployment are future extensions.
+Capstone project for **Madhav Institute of Technology and Science (MITS)** & Academic Research Track. This project trains a compact PyTorch 3D CNN **from scratch** to score and densely localize suspicious behaviour in surveillance video—such as fighting, accidents, theft, robbery, or vandalism.
 
-**Research question:** *How far can a compact, from-scratch spatio-temporal model get on weak video-level labels, and what closes the gap to pretrained pipelines?*
+**Research Question:** *How far can dense spatio-temporal anomaly localization emerge from weak video-level labels in a compact 3D CNN trained from scratch, how much does the model rely on non-event shortcuts, and can ensemble uncertainty enable risk-controlled triage?*
+
+---
+
+### 📚 Research Track & Master Documentation
+
+- 🔬 [**`research.md`**](research.md) — Comprehensive research compendium: prior literature gaps, our novelty, voxel MIL mathematical formulations, findings, and solution architecture.
+- 📋 [**`paper_ready.md`**](paper_ready.md) — Master publication readiness checklist, 5 mandatory result tables, SAM 2 mini-mask benchmark protocol, and reviewer-proofing guardrails.
+- 🛠️ [**`implementation_plan.md`**](implementation_plan.md) — Complete 10-phase master implementation plan, code templates, ablation ladder, and experiment matrix (E0–E10).
+- 📊 [**`summary.md`**](summary.md) — Consolidated codebase status, completed modules, and roadmap.
+- 🏛️ [**`SYSTEM_ARCHITECTURE.md`**](SYSTEM_ARCHITECTURE.md) — Engineering architecture, data contracts, and pipeline specs.
+
+---
 
 ## What the system does
 
@@ -10,9 +22,9 @@ Capstone project for **Madhav Institute of Technology and Science (MITS)**. This
 2. Builds overlapping, normalized 16-frame RGB clips.
 3. Scores each clip with a 3D CNN that learns appearance and motion jointly.
 4. Smooths clip scores and applies a configurable persistence threshold to avoid one-frame false alarms.
-5. Produces a timestamped anomaly-score timeline and an annotated output video for operator review.
+5. Produces a timestamped anomaly-score timeline, dense spatiotemporal heatmaps, and an annotated output video for operator review.
 
-The primary research configuration uses UCF-Crime's video-level normal/anomalous labels and a multiple-instance learning (MIL) ranking loss. This avoids requiring costly temporal annotations while still producing clip-level scores. Event type is optional: initially the product should label detections as `anomaly`; a type classifier can be added only when suitable class labels and validation data are available.
+The primary research configuration uses UCF-Crime's video-level normal/anomalous labels and a voxel-level multiple-instance learning (MIL) ranking loss. This produces dense space-time localization without requiring costly bounding box proposals or pixel mask supervision during training. Event type classification is deferred to preserve localization focus.
 
 ## System architecture
 
