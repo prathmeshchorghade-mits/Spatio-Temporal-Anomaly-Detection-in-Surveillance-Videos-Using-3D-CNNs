@@ -7,6 +7,9 @@ data/*
 output/
 tmp/
 
+# Phase-wise implementation plans (local working notes)
+docs/implementation_phase_wise/
+
 # Python tooling
 __pycache__/
 *.py[cod]

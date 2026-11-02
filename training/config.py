@@ -120,6 +120,18 @@ class ProjectConfig:
     RUNS_DIR: str = "./runs"
     OUTPUT_DIR: str = "./outputs"
 
+    # Dense model settings (Phase 2)
+    DENSE_VARIANT: str = "g14"           # one of: g7, g14, g28
+    DENSE_WIDTHS: List[int] = field(
+        default_factory=lambda: [32, 64, 128, 256]
+    )
+    DENSE_K_FRAC: float = 0.01          # top-k fraction for ranking loss
+    DENSE_MARGIN: float = 1.0           # hinge margin (on logits)
+    DENSE_LAM_SP: float = 8e-5          # sparsity weight
+    DENSE_LAM_TV: float = 8e-5          # TV smoothness weight
+    DENSE_LAM_NORM: float = 1e-2        # normal-bag suppression weight
+    DENSE_PROXIMITY_WINDOW: Optional[List[int]] = None  # None = global top-k
+
     # Seed
     SEED: int = 42
 
